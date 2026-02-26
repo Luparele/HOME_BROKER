@@ -1,0 +1,389 @@
+{% extends 'stocks/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - MarketPro{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1 class="dashboard-title">Monitoramento de Mercado</h1>
+</div>
+
+{% if favorites %}
+<div class="dashboard-chart-section">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h2>Evolução</h2>
+            <div class="chart-filters">
+                <button class="filter-btn" data-period="1d">1D</button>
+                <button class="filter-btn" data-period="5d">5D</button>
+                <button class="filter-btn active" data-period="1mo">1M</button>
+                <button class="filter-btn" data-period="6mo">6M</button>
+                <button class="filter-btn" data-period="ytd">YTD</button>
+                <button class="filter-btn" data-period="1y">1A</button>
+                <button class="filter-btn" data-period="5y">5A</button>
+                <button class="filter-btn" data-period="max">Máx</button>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="dashboardChart"></canvas>
+        </div>
+        <div id="dashboard-loading" class="loading-overlay">
+            <div class="spinner"></div>
+        </div>
+    </div>
+</div>
+
+<div class="stock-grid">
+    {% for stock in favorites %}
+    <a href="{% url 'stocks:stock_detail' stock.ticker %}" class="stock-card">
+        <div class="card-header">
+            <div class="ticker-with-color">
+                <span class="color-dot" style="background-color: {{ stock.color }}"></span>
+                <h3>{{ stock.ticker }}</h3>
+            </div>
+        </div>
+        <span class="stock-name">{{ stock.name }}</span>
+        <div class="stock-info">
+            <span class="stock-price">{{ stock.currency }} {{ stock.price|floatformat:2 }}</span>
+            <span class="stock-change {% if stock.change_pct >= 0 %}change-up{% else %}change-down{% endif %}">
+                {% if stock.change_pct >= 0 %}+{% endif %}{{ stock.change_pct|floatformat:2 }}%
+            </span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h2>Sua lista de favoritos está vazia.</h2>
+    <p>Busque por uma ação acima e clique em "Favoritar" para começar a monitorar.</p>
+    <div class="suggestions">
+        <p>Sugestões populares:</p>
+        <div class="tag-list">
+            <a href="{% url 'stocks:search_stock' %}?q=PETR4.SA" class="tag">PETR4.SA</a>
+            <a href="{% url 'stocks:search_stock' %}?q=VALE3.SA" class="tag">VALE3.SA</a>
+            <a href="{% url 'stocks:search_stock' %}?q=AAPL" class="tag">AAPL</a>
+            <a href="{% url 'stocks:search_stock' %}?q=TSLA" class="tag">TSLA</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .dashboard-chart-section {
+        margin-bottom: 3rem;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+
+    .ticker-with-color {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .chart-container {
+        position: relative;
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 2rem;
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-header h2 {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .chart-filters {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.25rem;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+    }
+
+    .filter-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+        color: var(--text-primary);
+    }
+
+    .filter-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        width: 100%;
+        height: 350px;
+    }
+
+    #dashboardChart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(23, 27, 34, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 12px;
+        z-index: 10;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px dashed var(--glass-border);
+    }
+
+    .empty-state h2 {
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+
+    .tag-list {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .tag {
+        background: var(--secondary-color);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        text-decoration: none;
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: 1px solid var(--glass-border);
+    }
+</style>
+
+{{ favorites|json_script:"favorites-data" }}
+
+{% block extra_js %}
+<!-- Add Chart.js to dashboard if not in base -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", async function () {
+        const favoritesDataEl = document.getElementById('favorites-data');
+        if (!favoritesDataEl) return;
+
+        const favorites = JSON.parse(favoritesDataEl.textContent);
+        if (!favorites || favorites.length === 0) return;
+
+        const ctx = document.getElementById('dashboardChart').getContext('2d');
+        const loadingOverlay = document.getElementById('dashboard-loading');
+        let currentDashboardChart = null;
+
+        async function fetchDashboardData(period) {
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                const fetchPromises = favorites.map(fav =>
+                    fetch(`/api/stock/${fav.ticker}/history/?period=${period}`)
+                        .then(res => res.json())
+                        .then(result => ({ ticker: fav.ticker, color: fav.color, ...result }))
+                        .catch(err => { console.error(`Error fetching ${fav.ticker}:`, err); return null; })
+                );
+
+                const results = await Promise.all(fetchPromises);
+
+                // Process results into Chart.js datasets
+                const datasets = [];
+                let commonLabels = [];
+
+                results.forEach(result => {
+                    if (result && result.data && result.data.length > 0) {
+                        // Use labels from the first successful fetch that has data
+                        if (commonLabels.length === 0) {
+                            commonLabels = result.data.map(item => item.Date);
+                        }
+
+                        datasets.push({
+                            label: result.ticker,
+                            data: result.data.map(item => item.Close),
+                            borderColor: result.color,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 5
+                        });
+                    }
+                });
+
+                if (currentDashboardChart) {
+                    currentDashboardChart.destroy();
+                }
+
+                const crosshairPlugin = {
+                    id: 'crosshair',
+                    afterDraw: chart => {
+                        if (chart.tooltip?._active?.length) {
+                            let activePoint = chart.tooltip._active[0];
+                            let ctx = chart.ctx;
+                            let x = activePoint.element.x;
+                            let topY = chart.scales.y.top;
+                            let bottomY = chart.scales.y.bottom;
+
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.moveTo(x, topY);
+                            ctx.lineTo(x, bottomY);
+                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = '#ef4444'; // Red color
+                            ctx.setLineDash([5, 5]); // Dashed line
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                };
+
+                if (datasets.length > 0) {
+                    currentDashboardChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: commonLabels,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: { color: '#f3f4f6', usePointStyle: true, boxWidth: 8 }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        title: function (context) {
+                                            if (!context || !context.length) return '';
+                                            const dateStr = context[0].label;
+                                            try {
+                                                const d = new Date(dateStr);
+                                                if (!isNaN(d)) {
+                                                    const hasTime = dateStr.includes(':');
+                                                    return new Intl.DateTimeFormat('pt-BR', {
+                                                        dateStyle: 'short',
+                                                        timeStyle: hasTime ? 'short' : undefined,
+                                                        timeZone: 'UTC'
+                                                    }).format(d);
+                                                }
+                                            } catch (e) { }
+                                            return dateStr;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#9ca3af', maxTicksLimit: 10, maxRotation: 0 },
+                                    grid: { display: false }
+                                },
+                                y: {
+                                    ticks: { color: '#9ca3af' },
+                                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                                }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'index',
+                            }
+                        },
+                        plugins: [crosshairPlugin]
+                    });
+                } else {
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.font = '16px Inter';
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Nenhum dado histórico disponível no momento.', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                }
+            } catch (e) {
+                console.error("Dashboard fetch error", e);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Setup Buttons
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                const period = this.getAttribute('data-period');
+                fetchDashboardData(period);
+            });
+        });
+
+        // Initialize with 1 Month
+        fetchDashboardData('1mo');
+    });
+</script>
+{% endblock %}
+{% endblock %}

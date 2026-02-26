@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bolsa de Valores{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'stocks/css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <header>
+        <div class="container nav-content">
+            <a href="{% url 'stocks:dashboard' %}" class="logo">
+                <span class="logo-icon">📈</span> MarketPro
+            </a>
+            <div class="search-nav">
+                <form id="search-form" action="{% url 'stocks:search_stock' %}" method="GET">
+                    <input type="text" name="q" placeholder="Buscar ticker (ex: AAPL, PETR4.SA)..." autocomplete="off">
+                    <button type="submit">🔍</button>
+                </form>
+            </div>
+            <nav>
+                {% if user.is_authenticated %}
+                <a href="{% url 'stocks:portfolio' %}" class="btn"
+                    style="margin-right: 15px; background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);">Minha
+                    Carteira</a>
+                <span class="user-info">Olá, {{ user.get_short_name|default:user.username }}</span>
+                {% else %}
+                <a href="/admin/login/" class="btn btn-secondary">Entrar</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 MarketPro - Dados via Yahoo Finance</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'stocks/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

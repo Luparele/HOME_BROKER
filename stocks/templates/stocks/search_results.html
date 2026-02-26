@@ -1,0 +1,95 @@
+{% extends 'stocks/base.html' %}
+
+{% block title %}Busca: {{ query }} - MarketPro{% endblock %}
+
+{% block content %}
+<div class="search-page">
+    <a href="{% url 'stocks:dashboard' %}" class="back-link">← Voltar ao Dashboard</a>
+
+    {% if error %}
+    <div class="error-card">
+        <h2>Ops!</h2>
+        <p>{{ error }}</p>
+    </div>
+    {% elif stock %}
+    <div class="result-card">
+        <div class="result-header">
+            <div class="ticker-info">
+                <h1>{{ stock.ticker }}</h1>
+                <p class="stock-name">{{ stock.name }}</p>
+            </div>
+            <div class="actions">
+                <button class="fav-btn {% if is_favorite %}active{% endif %}" data-ticker="{{ stock.ticker }}"
+                    data-name="{{ stock.name }}" onclick="toggleFavorite(this)">
+                    <span class="icon">{% if is_favorite %}⭐{% else %}☆{% endif %}</span>
+                    <span class="text">{% if is_favorite %}Favoritado{% else %}Favoritar{% endif %}</span>
+                </button>
+                <a href="{% url 'stocks:stock_detail' stock.ticker %}" class="btn btn-primary">Ver Detalhes</a>
+            </div>
+        </div>
+
+        <div class="price-display">
+            <span class="price">{{ stock.currency }} {{ stock.price|floatformat:2 }}</span>
+            <span class="change {% if stock.change_pct >= 0 %}change-up{% else %}change-down{% endif %}">
+                {% if stock.change_pct >= 0 %}+{% endif %}{{ stock.change_pct|floatformat:2 }}%
+            </span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .search-page {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 2rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .result-card,
+    .error-card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 2.5rem;
+    }
+
+    .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .result-header h1 {
+        font-size: 2.5rem;
+    }
+
+    .price-display {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+    }
+
+    .price-display .price {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+
+    .price-display .change {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}

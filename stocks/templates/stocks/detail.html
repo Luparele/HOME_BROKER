@@ -1,0 +1,628 @@
+{% extends 'stocks/base.html' %}
+
+{% block title %}{{ stock.ticker }} - MarketPro{% endblock %}
+
+{% block content %}
+<div class="stock-detail-page">
+    <div class="stock-header">
+        <div class="ticker-info">
+            <h1>{{ stock.ticker }}</h1>
+            <p class="stock-name">{{ stock.name }}</p>
+            <div class="price-info">
+                <span class="price">{{ stock.currency }} {{ stock.price|floatformat:2 }}</span>
+                <span class="change {% if stock.change_pct >= 0 %}change-up{% else %}change-down{% endif %}">
+                    {% if stock.change_pct >= 0 %}+{% endif %}{{ stock.change_pct|floatformat:2 }}%
+                </span>
+                {% if stock.dividend_yield_display > 0 %}
+                <span class="dy-badge"
+                    style="margin-left: 1rem; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;">
+                    DY: {{ stock.dividend_yield_display|floatformat:2 }}% a.a.
+                </span>
+                {% endif %}
+            </div>
+            {% if stock.description %}
+            <p class="stock-description"
+                style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; max-width: 800px;">
+                {{ stock.description|truncatewords:40 }}
+            </p>
+            {% endif %}
+        </div>
+        <div class="actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button class="portfolio-btn {% if portfolio_quantity > 0 %}active{% endif %}"
+                onclick="openPortfolioModal()">
+                <span class="icon">💼</span>
+                <span class="text">Adicionar à Carteira</span>
+            </button>
+            <button class="fav-btn {% if is_favorite %}active{% endif %}" data-ticker="{{ stock.ticker }}"
+                data-name="{{ stock.name }}" onclick="toggleFavorite(this)">
+                <span class="icon">{% if is_favorite %}⭐{% else %}☆{% endif %}</span>
+                <span class="text">{% if is_favorite %}Favoritado{% else %}Favoritar{% endif %}</span>
+            </button>
+            {% if portfolio_quantity > 0 %}
+            <div style="width: 100%; margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                Você possui <strong style="color: var(--text-primary);">{{ portfolio_quantity|floatformat:0 }}
+                    cotas</strong> desta ação.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Portfolio Modal -->
+    <div id="portfolioModal" class="portfolio-modal" style="display: none;">
+        <div class="portfolio-modal-content">
+            <h3>Adicionar à Carteira</h3>
+            <p>Quantas cotas de <strong>{{ stock.ticker }}</strong> você deseja <strong>adicionar</strong>?</p>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Para remover cotas, insira um número negativo.
+            </p>
+            <input type="number" id="portfolioQuantityInput" step="any" value="0" placeholder="0">
+            <div class="modal-actions">
+                <button onclick="closePortfolioModal()" class="cancel-btn">Cancelar</button>
+                <button onclick="savePortfolioQuantity()" class="save-btn">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" style="display: none;">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Indicadores Fundamentalistas -->
+    <div class="indicators-grid">
+        {% if stock.pe_ratio %}
+        <div class="indicator-card" title="Preço/Lucro (P/L)">
+            <span class="label">P/L</span>
+            <span class="value">{{ stock.pe_ratio|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if stock.price_to_book %}
+        <div class="indicator-card" title="Preço / Valor Patrimonial (P/VP)">
+            <span class="label">P/VP</span>
+            <span class="value">{{ stock.price_to_book|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if stock.eps %}
+        <div class="indicator-card" title="Lucro por Ação (LPA)">
+            <span class="label">LPA</span>
+            <span class="value">R$ {{ stock.eps|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if stock.book_value %}
+        <div class="indicator-card" title="Valor Patrimonial da Ação (VPA)">
+            <span class="label">VPA</span>
+            <span class="value">R$ {{ stock.book_value|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if stock.market_cap %}
+        <div class="indicator-card" title="Valor de Mercado (aproximado em Milhões ou Bilhões)">
+            <span class="label">Val. Mercado</span>
+            <span class="value">{{ stock.market_cap }}</span>
+        </div>
+        {% endif %}
+        {% if stock.fifty_two_week_high %}
+        <div class="indicator-card" title="Cotação Máxima das últimas 52 semanas">
+            <span class="label">Máx (52s)</span>
+            <span class="value">R$ {{ stock.fifty_two_week_high|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if stock.fifty_two_week_low %}
+        <div class="indicator-card" title="Cotação Mínima das últimas 52 semanas">
+            <span class="label">Mín (52s)</span>
+            <span class="value">R$ {{ stock.fifty_two_week_low|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if stock.average_volume %}
+        <div class="indicator-card" title="Volume diário médio de negociação">
+            <span class="label">Vol. Médio</span>
+            <span class="value">{{ stock.average_volume }}</span>
+        </div>
+        {% endif %}
+        {% if stock.sector and stock.sector != 'N/A' %}
+        <div class="indicator-card" title="Setor de atuação no mercado">
+            <span class="label">Setor</span>
+            <span class="value" style="font-size: 0.95rem;">{{ stock.sector }}</span>
+        </div>
+        {% endif %}
+    </div>
+    <div class="chart-section">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2 id="chart-title">Dados Históricos</h2>
+                <div class="chart-filters">
+                    <button class="filter-btn" data-period="1d">1D</button>
+                    <button class="filter-btn" data-period="5d">5D</button>
+                    <button class="filter-btn active" data-period="1mo">1M</button>
+                    <button class="filter-btn" data-period="6mo">6M</button>
+                    <button class="filter-btn" data-period="ytd">YTD</button>
+                    <button class="filter-btn" data-period="1y">1A</button>
+                    <button class="filter-btn" data-period="5y">5A</button>
+                    <button class="filter-btn" data-period="max">Máx</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="historicalChart"></canvas>
+            </div>
+            <div id="chart-loading" class="loading-overlay" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stock-detail-page {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .stock-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    /* Fundamental Indicators Grid */
+    .indicators-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    .indicator-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+    }
+
+    .indicator-card .label {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-bottom: 0.3rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .indicator-card .value {
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .portfolio-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        color: var(--text-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .portfolio-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .portfolio-btn.active {
+        background: rgba(16, 185, 129, 0.2);
+        border-color: #10b981;
+        color: #10b981;
+    }
+
+    /* Modal Styles */
+    .portfolio-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .portfolio-modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--glass-border);
+        padding: 2rem;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .portfolio-modal-content h3 {
+        margin-top: 0;
+        color: var(--text-primary);
+    }
+
+    .portfolio-modal-content p {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    #portfolioQuantityInput {
+        width: 100%;
+        padding: 0.8rem;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    #portfolioQuantityInput:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .modal-actions button {
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        border: none;
+        transition: 0.2s;
+    }
+
+    .cancel-btn {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--glass-border) !important;
+    }
+
+    .cancel-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .save-btn {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .save-btn:hover {
+        opacity: 0.9;
+    }
+
+    .price-info {
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+    }
+
+    .price-info .price {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+
+    .price-info .change {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .chart-container {
+        position: relative;
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-header h2 {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .chart-filters {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.25rem;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+    }
+
+    .filter-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+        color: var(--text-primary);
+    }
+
+    .filter-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        width: 100%;
+        height: 400px;
+    }
+
+    #historicalChart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(23, 27, 34, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 12px;
+        z-index: 10;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+{{ historical_data_json|json_script:"historical-data" }}
+
+{% block extra_js %}
+<script>
+    function openPortfolioModal() {
+        document.getElementById('portfolioModal').style.display = 'flex';
+        document.getElementById('portfolioQuantityInput').focus();
+    }
+
+    function closePortfolioModal() {
+        document.getElementById('portfolioModal').style.display = 'none';
+    }
+
+    async function savePortfolioQuantity() {
+        const ticker = "{{ stock.ticker }}";
+        const quantity = document.getElementById('portfolioQuantityInput').value;
+
+        try {
+            const response = await fetch('/portfolio/add/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ ticker: ticker, quantity: quantity })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                closePortfolioModal();
+                showToast(result.message || 'Carteira salva com sucesso!', 'success');
+                setTimeout(() => location.reload(), 1500); // Reload after toast finishes
+            } else {
+                showToast(result.error, 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Ocorreu um erro ao salvar a carteira.", 'error');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const ticker = "{{ stock.ticker }}";
+        const ctx = document.getElementById('historicalChart').getContext('2d');
+        let currentChart = null;
+
+        // Initial Data from context
+        const initialData = JSON.parse(document.getElementById('historical-data').textContent);
+
+        function getChartColor(prices) {
+            if (!prices || prices.length < 2) return '#3b82f6'; // default blue
+            const first = prices[0];
+            const last = prices[prices.length - 1];
+            return last >= first ? '#10b981' : '#ef4444'; // green if up, red if down
+        }
+
+        function renderChart(data) {
+            if (!data) return;
+
+            const labels = data.map(item => item.Date);
+            const prices = data.map(item => item.Close);
+            const color = getChartColor(prices);
+
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            const crosshairPlugin = {
+                id: 'crosshair',
+                afterDraw: chart => {
+                    if (chart.tooltip?._active?.length) {
+                        let activePoint = chart.tooltip._active[0];
+                        let ctx = chart.ctx;
+                        let x = activePoint.element.x;
+                        let topY = chart.scales.y.top;
+                        let bottomY = chart.scales.y.bottom;
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(x, topY);
+                        ctx.lineTo(x, bottomY);
+                        ctx.lineWidth = 1;
+                        ctx.strokeStyle = '#ef4444'; // Red color
+                        ctx.setLineDash([5, 5]); // Dashed line
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            };
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Preço de Fechamento',
+                        data: prices,
+                        borderColor: color,
+                        backgroundColor: (context) => {
+                            const ctx = context.chart.ctx;
+                            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                            const rgb = color === '#10b981' ? '16, 185, 129' : '239, 68, 68';
+                            gradient.addColorStop(0, `rgba(${rgb}, 0.2)`);
+                            gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+                            return gradient;
+                        },
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function (context) {
+                                    if (!context || !context.length) return '';
+                                    const dateStr = context[0].label;
+                                    try {
+                                        const d = new Date(dateStr);
+                                        if (!isNaN(d)) {
+                                            // Handle cases with or without time
+                                            const hasTime = dateStr.includes(':');
+                                            return new Intl.DateTimeFormat('pt-BR', {
+                                                dateStyle: 'short',
+                                                timeStyle: hasTime ? 'short' : undefined,
+                                                timeZone: 'UTC' // Prevent local timezone shift if data is YYYY-MM-DD
+                                            }).format(d);
+                                        }
+                                    } catch (e) { }
+                                    return dateStr;
+                                },
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '{{ stock.currency }}' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#9ca3af', maxTicksLimit: 10, maxRotation: 0 },
+                            grid: { display: false }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function (value, index, values) {
+                                    return value.toFixed(2);
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    }
+                },
+                plugins: [crosshairPlugin]
+            });
+        }
+
+        async function fetchHistoricalData(period) {
+            const loadingOverlay = document.getElementById('chart-loading');
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/api/stock/${ticker}/history/?period=${period}`);
+                const result = await response.json();
+
+                if (response.ok && result.data) {
+                    renderChart(result.data);
+                } else {
+                    console.error("Error fetching data:", result.error);
+                }
+            } catch (error) {
+                console.error("Request failed:", error);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Setup Buttons
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                // Update active state
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                // Fetch new data
+                const period = this.getAttribute('data-period');
+                fetchHistoricalData(period);
+            });
+        });
+
+        // Initial render
+        renderChart(initialData);
+    });
+</script>
+{% endblock %}
+{% endblock %}
