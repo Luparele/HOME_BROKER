@@ -1,18 +1,31 @@
 import os
+import random
 import certifi
 import yfinance as yf
 import pandas as pd
 from curl_cffi.requests import Session as CurlSession
+from django.core.cache import cache
 
-# Fix for SSL certificate issues (curl 77)
-# Use curl_cffi Session directly and disable verification if needed
-# Also add a realistic User-Agent to avoid rate limiting (429)
-session = CurlSession(
-    verify=False,
-    headers={
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-)
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0'
+]
+
+def get_session():
+    # Use impersonate="chrome110" to handle TLS fingerprinting and Cloudflare blocks natively
+    return CurlSession(
+        impersonate="chrome110",
+        verify=False,
+        headers={
+            'User-Agent': random.choice(USER_AGENTS)
+        }
+    )
+
+# Mantém uma sessão global que pode ser reutilizada
+session = get_session()
 
 def fmt_large(val, prefix=''):
     if val is None: return None
@@ -30,6 +43,12 @@ def get_stock_info(ticker):
     """
     ticker = ticker.upper().strip()
     
+    # Attempt to get from cache first
+    cache_key = f"stock_info_{ticker}"
+    cached_info = cache.get(cache_key)
+    if cached_info:
+        return cached_info
+    
     # Try the original ticker first
     info = _fetch_from_yf(ticker)
     
@@ -40,6 +59,12 @@ def get_stock_info(ticker):
         if re.match(r'^[A-Z]{4}[0-9]{1,2}$', ticker):
             info = _fetch_from_yf(f"{ticker}.SA")
             
+    # Store in cache
+    if info['valid']:
+        cache.set(cache_key, info, timeout=300) # Cache success for 5 min
+    else:
+        cache.set(cache_key, info, timeout=60)  # Cache failures for 1 min to avoid spam
+        
     return info
 
 def _fetch_from_yf(ticker):
@@ -119,6 +144,12 @@ def get_historical_data(ticker, period='1mo', interval=None):
         else:
             interval = '1d'
             
+    # Attempt to get from cache first
+    cache_key = f"hist_{ticker}_{period}_{interval}"
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return cached_data
+            
     # Try fetching as is
     data = _fetch_hist_from_yf(ticker, period, interval)
     
@@ -128,6 +159,12 @@ def get_historical_data(ticker, period='1mo', interval=None):
         if re.match(r'^[A-Z]{4}[0-9]{1,2}$', ticker):
             data = _fetch_hist_from_yf(f"{ticker}.SA", period, interval)
     
+    # Store in cache
+    if data is not None:
+        cache.set(cache_key, data, timeout=600) # Cache success for 10 min
+    else:
+        cache.set(cache_key, data, timeout=60)  # Cache failures for 1 min
+        
     return data
 
 def _fetch_hist_from_yf(ticker, period, interval):
