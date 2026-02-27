@@ -1,0 +1,65 @@
+{% extends 'stocks/base.html' %}
+
+{% block title %}Saiu - MarketPro{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card" style="text-align: center;">
+        <div class="auth-header">
+            <h1 style="color: var(--primary);">Até logo!</h1>
+            <p>Sua sessão foi encerrada com segurança.</p>
+        </div>
+
+        <div style="margin: 3rem 0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+        </div>
+
+        <a href="{% url 'login' %}" class="btn btn-primary btn-block">Acessar Novamente</a>
+    </div>
+</div>
+
+<style>
+    .auth-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 200px);
+    }
+
+    .auth-card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 3rem;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .auth-header h1 {
+        font-size: 2rem;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .auth-header p {
+        color: var(--text-secondary);
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .btn-block {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends 'stocks/base.html' %}
+
+{% block title %}Entrar - MarketPro{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Bem-vindo</h1>
+            <p>Entre com sua conta MarketPro.</p>
+        </div>
+
+        {% if form.errors %}
+        <div class="auth-error">
+            <p>Usuário ou senha incorretos. Tente novamente.</p>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}" class="auth-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_username">Usuário</label>
+                <input type="text" name="username" id="id_username" required autofocus class="form-control"
+                    placeholder="Seu nome de usuário">
+            </div>
+
+            <div class="form-group">
+                <label for="id_password">Senha</label>
+                <input type="password" name="password" id="id_password" required class="form-control"
+                    placeholder="Sua senha secreta">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            <input type="hidden" name="next" value="{{ next }}">
+        </form>
+
+        <div class="auth-footer">
+            <p>Esqueceu a senha? Entre em contato com o suporte.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 200px);
+    }
+
+    .auth-card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 3rem;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .auth-header h1 {
+        font-size: 2rem;
+        color: var(--text-primary);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .auth-header p {
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .auth-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .auth-form label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-block {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 1rem;
+    }
+
+    .auth-error {
+        background: rgba(239, 68, 68, 0.1);
+        border-left: 4px solid var(--danger);
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+
+    .auth-error p {
+        color: var(--danger);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .auth-footer {
+        margin-top: 2rem;
+        text-align: center;
+        border-top: 1px solid var(--glass-border);
+        padding-top: 1.5rem;
+    }
+
+    .auth-footer p {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin: 0;
+    }
+</style>
+{% endblock %}

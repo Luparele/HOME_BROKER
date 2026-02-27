@@ -62,7 +62,21 @@ header {
     gap: 0.5rem;
 }
 
-.search-nav form {
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.user-greeting {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.search-form {
     display: flex;
     background: var(--secondary-color);
     border: 1px solid var(--glass-border);
@@ -71,7 +85,7 @@ header {
     width: 100%;
 }
 
-.search-nav input {
+.search-input {
     background: transparent;
     border: none;
     color: var(--text-primary);
@@ -80,7 +94,7 @@ header {
     outline: none;
 }
 
-.search-nav button {
+.search-btn {
     background: transparent;
     border: none;
     padding: 0 1rem;
@@ -145,8 +159,13 @@ main {
     font-weight: 600;
 }
 
-.change-up { color: var(--accent-green); }
-.change-down { color: var(--accent-red); }
+.change-up {
+    color: var(--accent-green);
+}
+
+.change-down {
+    color: var(--accent-red);
+}
 
 /* Detail View */
 .stock-header {
@@ -176,8 +195,15 @@ main {
     transition: background var(--transition-speed);
 }
 
-.btn-primary { background: var(--primary-color); color: white; }
-.btn-secondary { background: var(--secondary-color); color: var(--text-primary); }
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: var(--text-primary);
+}
 
 .fav-btn {
     background: transparent;
@@ -212,7 +238,14 @@ footer {
         justify-content: space-between;
         gap: 0;
     }
-    .search-nav form {
+
+    .nav-links {
+        width: auto;
+        justify-content: flex-end;
+    }
+
+    .search-form {
         width: 400px;
+        margin-right: 2rem;
     }
 }

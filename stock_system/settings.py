@@ -135,3 +135,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Simplified static file serving.
 # https://whitenoise.readthedocs.io/en/latest/django.html
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Authentication Custom Redirects
+LOGIN_REDIRECT_URL = 'stocks:dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'login'
