@@ -14,6 +14,16 @@ session = CurlSession(
     }
 )
 
+def fmt_large(val, prefix=''):
+    if val is None: return None
+    try:
+        val = float(val)
+        if val >= 1_000_000_000: return f"{prefix}{val/1_000_000_000:.2f} B"
+        if val >= 1_000_000: return f"{prefix}{val/1_000_000:.2f} M"
+        return f"{prefix}{val:.2f}"
+    except:
+        return val
+
 def get_stock_info(ticker):
     """
     Fetch basic info for a given ticker. Handles .SA suffix automatically for Brazilian stocks.
@@ -73,16 +83,6 @@ def _fetch_from_yf(ticker):
         parsed_info['description'] = details.get('longBusinessSummary', details.get('description', ''))
         
         # Fundamental Indicators (Infomoney Style)
-        def fmt_large(val, prefix=''):
-            if val is None: return None
-            try:
-                val = float(val)
-                if val >= 1_000_000_000: return f"{prefix}{val/1_000_000_000:.2f} B"
-                if val >= 1_000_000: return f"{prefix}{val/1_000_000:.2f} M"
-                return f"{prefix}{val:.2f}"
-            except:
-                return val
-
         parsed_info['pe_ratio'] = details.get('trailingPE', details.get('forwardPE'))
         parsed_info['price_to_book'] = details.get('priceToBook')
         parsed_info['eps'] = details.get('trailingEps') # LPA
