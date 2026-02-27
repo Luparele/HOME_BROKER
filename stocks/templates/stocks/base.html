@@ -4,7 +4,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="{% url 'stocks:manifest' %}">
+    <meta name="theme-color" content="#0d0f14">
+    <link rel="apple-touch-icon" href="{% static 'stocks/icons/icon-192x192.png' %}">
     <title>{% block title %}Bolsa de Valores{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'stocks/css/style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -48,6 +52,19 @@
     </footer>
 
     <script src="{% static 'stocks/js/main.js' %}"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{% url 'stocks:sw' %}")
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 
