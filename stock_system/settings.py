@@ -34,6 +34,8 @@ DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # Always allow Render's default domain
 ALLOWED_HOSTS.append('.onrender.com')
+# Allow PythonAnywhere domain
+ALLOWED_HOSTS.append('marketpro.pythonanywhere.com')
 
 
 # Application definition
