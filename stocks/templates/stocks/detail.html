@@ -333,6 +333,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
         margin-bottom: 1.5rem;
     }
 
@@ -349,9 +351,22 @@
         padding: 0.25rem;
         border-radius: 8px;
         border: 1px solid var(--glass-border);
+        overflow-x: auto;
+        max-width: 100%;
+        -webkit-overflow-scrolling: touch;
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
+
+    .chart-filters::-webkit-scrollbar {
+        display: none;
+        /* Chrome, Safari and Opera */
     }
 
     .filter-btn {
+        flex: 0 0 auto;
         background: transparent;
         border: none;
         color: var(--text-secondary);
