@@ -55,5 +55,3 @@ Esse projeto foi criado para constante evolução. O plano arquitetural possui 5
 5. **🔍 Filtragem e Ordenação em Tabela:** Para carteiras robustas, criação da possibilidade de organizar dinamicamente a `portfolio.html` pelo maior Dividend Yield, ou Maior Aporte do dia, de forma instantânea através do JavaScript puro, elevando o sistema a nível institucional de Home Broker.
 
 ---
-
-> Desenvolvido de forma autônoma como prova de conceito para construção estética Glassmorfista aliada a complexidade de rotinas financeiras.
